@@ -104,7 +104,7 @@ public class VR180Mesh : MonoBehaviour
 		{
 			//	途中で Box が見つからないと NullReferenceException
 			//	.NET 4 にして ?. を使う方がよい
-			var box = BoxHeader.GetBoxHeader(s)
+			var box = MeshProjectionBoxParser.BoxHeader.GetBoxHeader(s)
 				.Find(s, "moov").Enter(s)
 				.Find(s, "trak").Enter(s)
 				.Find(s, "mdia").Enter(s)
@@ -125,81 +125,5 @@ public class VR180Mesh : MonoBehaviour
 	}
 
 
-	private class BoxHeader
-	{
-		public long PositionHead;
-		public long PositionBody;
-		public long Size;
-		public string BoxType;
-
-		public BoxHeader MoveNext(Stream s)
-		{
-			s.Seek(PositionHead + Size, SeekOrigin.Begin);
-			return GetBoxHeader(s);
-		}
-
-		public byte[] GetBox(Stream s)
-		{
-			var ret = new byte[Size];
-
-			s.Seek(PositionHead, SeekOrigin.Begin);
-			s.Read(ret, 0, ret.Length);
-
-			return ret;
-		}
-
-		public BoxHeader Enter(Stream s, int offset = 0)
-		{
-			s.Seek(PositionBody + offset, SeekOrigin.Begin);
-			return GetBoxHeader(s);
-		}
-
-		public BoxHeader Find(Stream s, string boxType)
-		{
-			var box = this;
-			while (box != null && box.BoxType != boxType)
-			{
-				box = box.MoveNext(s);
-			}
-			return box;
-		}
-
-		public static BoxHeader GetBoxHeader(Stream s)
-		{
-			var pos = s.Position;
-			var bsize = new byte[4];
-			var bboxtype = new byte[4];
-			if (s.Read(bsize, 0, bsize.Length) < bsize.Length)
-			{
-				return null;
-			}
-			if (s.Read(bboxtype, 0, bboxtype.Length) < bboxtype.Length)
-			{
-				return null;
-			}
-
-			var ret = new BoxHeader();
-
-			ret.PositionHead = pos;
-			ret.Size = System.BitConverter.ToUInt32(bsize.Reverse().ToArray(), 0);
-			ret.BoxType = System.Text.Encoding.ASCII.GetString(bboxtype);
-
-			if (ret.Size == 1)
-			{
-				var bsize8 = new byte[8];
-				if (s.Read(bsize8, 0, bsize8.Length) < bsize8.Length)
-				{
-					return null;
-				}
-
-				bsize8 = bsize8.Reverse().ToArray();
-				ret.Size = System.BitConverter.ToInt64(bsize8, 0);
-			}
-
-			ret.PositionBody = s.Position;
-
-			return ret;
-		}
-	}
 
 }
