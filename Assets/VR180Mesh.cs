@@ -9,9 +9,7 @@ using UnityEngine.Video;
 [RequireComponent(typeof(MeshFilter))]
 public class VR180Mesh : MonoBehaviour
 {
-
-	// Use this for initialization
-	void Start()
+	private void Awake()
 	{
 		var meshFilter = GetComponent<MeshFilter>();
 		var vp = GetComponent<VideoPlayer>();
@@ -82,6 +80,13 @@ public class VR180Mesh : MonoBehaviour
 			}
 			meshFilter.mesh = unityMesh;
 		}
+
+	}
+
+	// Use this for initialization
+	void Start()
+	{
+		var vp = GetComponent<VideoPlayer>();
 
 		vp.Play();
 	}
