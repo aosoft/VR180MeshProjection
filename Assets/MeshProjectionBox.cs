@@ -1,4 +1,7 @@
-﻿using System;
+﻿//	VR180 Mesh Projection Box Parser
+//	Copyright(c) Yasuhiro Taniuchi
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
