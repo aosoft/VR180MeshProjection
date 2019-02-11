@@ -102,22 +102,26 @@ public class VR180Mesh : MonoBehaviour
 		using (var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
 		using (var s = new BufferedStream(fs))
 		{
-			//	途中で Box が見つからないと NullReferenceException
-			//	.NET 4 にして ?. を使う方がよい
-			var box = MeshProjectionBoxParser.BoxHeader.GetBoxHeader(s)
-				.Find(s, "moov").Enter(s)
-				.Find(s, "trak").Enter(s)
-				.Find(s, "mdia").Enter(s)
-				.Find(s, "minf").Enter(s)
-				.Find(s, "stbl").Enter(s)
-				.Find(s, "stsd").Enter(s, 8)
-				.Find(s, "avc1").Enter(s, 0x4e)
-				.Find(s, "sv3d").Enter(s)
-				.Find(s, "proj").Enter(s)
-				.Find(s, "mshp");
-			if (box != null)
+			var box = MeshProjectionBoxParser.BoxHeader.GetBoxHeader(s).Find(s, "moov").Enter(s);
+			while (box.IsValid)
 			{
-				return box.GetBox(s);
+				box = box.Find(s, "trak");
+				var mshp = box.Enter(s)
+					.Find(s, "mdia").Enter(s)
+					.Find(s, "minf").Enter(s)
+					.Find(s, "stbl").Enter(s)
+					.Find(s, "stsd").Enter(s, 8)
+					.Find(s, "avc1").Enter(s, 0x4e)
+					.Find(s, "sv3d").Enter(s)
+					.Find(s, "proj").Enter(s)
+					.Find(s, "mshp");
+
+				if (mshp.IsValid)
+				{
+					return mshp.GetBox(s);
+				}
+
+				box = box.MoveNext(s);
 			}
 
 			return null;

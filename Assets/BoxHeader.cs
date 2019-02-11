@@ -6,17 +6,29 @@ using System.Text;
 
 namespace MeshProjectionBoxParser
 {
-	public class BoxHeader
+	public struct BoxHeader
 	{
 		public long PositionHead;
 		public long PositionBody;
 		public long Size;
 		public string BoxType;
 
+		public bool IsValid
+		{
+			get
+			{
+				return Size > 0;
+			}
+		}
+
 		public BoxHeader MoveNext(Stream s)
 		{
-			s.Seek(PositionHead + Size, SeekOrigin.Begin);
-			return GetBoxHeader(s);
+			if (IsValid)
+			{
+				s.Seek(PositionHead + Size, SeekOrigin.Begin);
+				return GetBoxHeader(s);
+			}
+			return new BoxHeader();
 		}
 
 		public byte[] GetBox(Stream s)
@@ -31,14 +43,18 @@ namespace MeshProjectionBoxParser
 
 		public BoxHeader Enter(Stream s, int offset = 0)
 		{
-			s.Seek(PositionBody + offset, SeekOrigin.Begin);
-			return GetBoxHeader(s);
+			if (IsValid)
+			{
+				s.Seek(PositionBody + offset, SeekOrigin.Begin);
+				return GetBoxHeader(s);
+			}
+			return new BoxHeader();
 		}
 
 		public BoxHeader Find(Stream s, string boxType)
 		{
 			var box = this;
-			while (box != null && box.BoxType != boxType)
+			while (box.IsValid && box.BoxType != boxType)
 			{
 				box = box.MoveNext(s);
 			}
@@ -52,11 +68,11 @@ namespace MeshProjectionBoxParser
 			var bboxtype = new byte[4];
 			if (s.Read(bsize, 0, bsize.Length) < bsize.Length)
 			{
-				return null;
+				return new BoxHeader();
 			}
 			if (s.Read(bboxtype, 0, bboxtype.Length) < bboxtype.Length)
 			{
-				return null;
+				return new BoxHeader();
 			}
 
 			var ret = new BoxHeader();
@@ -70,7 +86,7 @@ namespace MeshProjectionBoxParser
 				var bsize8 = new byte[8];
 				if (s.Read(bsize8, 0, bsize8.Length) < bsize8.Length)
 				{
-					return null;
+					return new BoxHeader();
 				}
 
 				bsize8 = bsize8.Reverse().ToArray();
